@@ -1002,15 +1002,17 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     }
 
     // The BEPR TOKEN!
-    BEP20 public bepr;
+    IBEP20 public bepr;
     // Dev address.
-    address public devaddr;
+    // address public devaddr;
     // BEPR tokens created per block.
     uint256 public beprPerBlock;
     // Bonus muliplier for early bepr makers.
     uint256 public constant BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
+    // Fund Manager address
+    address public fundmanager;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1025,18 +1027,18 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SetFeeAddress(address indexed user, address indexed newAddress);
-    event SetDevAddress(address indexed user, address indexed newAddress);
+    event SetFundmanager(address indexed user, address indexed newAddress);
     event UpdateEmissionRate(address indexed user, uint256 goosePerBlock);
 
     constructor(
-        BEP20 _bepr,
-        address _devaddr,
+        IBEP20 _bepr,
+        address _fundmanager,
         address _feeAddress,
         uint256 _beprPerBlock,
         uint256 _startBlock
     ) public {
         bepr = _bepr;
-        devaddr = _devaddr;
+        fundmanager = _fundmanager;
         feeAddress = _feeAddress;
         beprPerBlock = _beprPerBlock;
         startBlock = _startBlock;
@@ -1178,6 +1180,16 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
         pool.lpToken.safeTransfer(address(msg.sender), amount);
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
+    
+    function depositFund(uint256 _amount) external {
+        require(msg.sender == fundmanager, "fundmanager: wut?");
+        bepr.safeTransferFrom(address(msg.sender), address(this), _amount);
+    }
+    
+    function withdrawFund(uint256 _amount) external {
+        require(msg.sender == fundmanager, "fundmanager: wut?");
+        safeBEPRTransfer(msg.sender, _amount);
+    }
 
     // Safe bepr transfer function, just in case if rounding error causes pool to not have enough BEPRs.
     function safeBEPRTransfer(address _to, uint256 _amount) internal {
@@ -1192,10 +1204,10 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
-        emit SetDevAddress(msg.sender, _devaddr);
+    function updateFundmanager(address _fundmanager) public {
+        require(msg.sender == fundmanager, "fundmanager: wut?");
+        fundmanager = _fundmanager;
+        emit SetFundmanager(msg.sender, _fundmanager);
     }
 
     function setFeeAddress(address _feeAddress) public {
