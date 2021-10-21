@@ -1025,6 +1025,8 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event DepositFund(uint256 amount);
+    event WithdrawFund(uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SetFeeAddress(address indexed user, address indexed newAddress);
     event SetFundmanager(address indexed user, address indexed newAddress);
@@ -1184,11 +1186,13 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     function depositFund(uint256 _amount) external {
         require(msg.sender == fundmanager, "fundmanager: wut?");
         bepr.safeTransferFrom(address(msg.sender), address(this), _amount);
+        emit DepositFund(_amount);
     }
     
     function withdrawFund(uint256 _amount) external {
         require(msg.sender == fundmanager, "fundmanager: wut?");
         safeBEPRTransfer(msg.sender, _amount);
+        emit WithdrawFund(_amount);
     }
 
     // Safe bepr transfer function, just in case if rounding error causes pool to not have enough BEPRs.
